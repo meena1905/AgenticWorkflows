@@ -1,4 +1,4 @@
-# Assignment 2 — AI Dev Workflow Assistant
+# AI Dev Workflow Assistant
 
 An AI-powered agent that assists developers with everyday coding tasks using the Groq API (free).
 
@@ -49,10 +49,10 @@ An AI-powered agent that assists developers with everyday coding tasks using the
 Your final folder:
 ````
 Assignment-2/
-├── assignment2.py       ← updated
+├── assignment2.py       
 ├── sample_code.py
 ├── requirements.txt
-├── README.md            ← new
+├── README.md            
 └── .env
 `````
 
