@@ -1,76 +1,114 @@
-match = re.search(pattern, text, re.DOTALL)
-    if match:
-        return match.group(1).strip()
-    
-    # Fallback: manually strip common Markdown artifacts if regex fails
-    return text.replace("```python", "").replace("```", "").strip()
+"""
+AI Dev Workflow Assistant
+=========================================
+An AI agent that assists in development workflows:
+  - Code understanding
+  - Debugging
+  - Documentation generation
+  - Test generation + auto-run
+
+Usage:
+  python assignment2.py --file <your_file.py> --mode explain
+  python assignment2.py --file <your_file.py> --mode debug
+  python assignment2.py --file <your_file.py> --mode document
+  python assignment2.py --file <your_file.py> --mode test
+  python assignment2.py --file <your_file.py> --mode all
+
+Setup:
+  pip install -r requirements.txt
+  Create a .env file with: GROQ_API_KEY=your-key-here
+"""
+
+import os
+import sys
+import argparse
+import subprocess
+from datetime import datetime
+from groq import Groq
+from dotenv import load_dotenv
+
+load_dotenv()
+
+def get_client():
+    key = os.getenv("GROQ_API_KEY")
+    if not key:
+        print("ERROR: GROQ_API_KEY not set.")
+        print("Add it to a .env file: GROQ_API_KEY=your-key-here")
+        sys.exit(1)
+    return Groq(api_key=key)
+
+def read_file(path):
+    if not os.path.exists(path):
+        print(f"ERROR: File '{path}' not found.")
+        sys.exit(1)
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
 
 def ask_groq(client, task, code, filename):
-    """Executes specific agentic reasoning tasks using the Llama-3.3-70B model."""
-    current_date = "2026-03-26"
-    
     prompts = {
-        "explain": f"""System: You are a Senior Software Architect. Date: {current_date}.
-Task: Explain the architecture of the file '{filename}'. 
-Provide: High-level overview, key functions/classes logic, and data flow analysis.""",
+        "explain": f"""You are an expert software engineer.
+Explain the following code from '{filename}' clearly.
+Cover: what it does, key functions/classes, inputs, outputs, and any important notes.
+``````````python
+{code}
+`````````""",
 
-        "debug": f"""System: You are a Lead Security & QA Engineer.
-Task: Audit '{filename}' for:
-1. Logic bugs and calculation errors.
-2. Security risks (OWASP Top 10 focus).
-3. PEP 8 coding style violations.
-Provide: Description of problems and the corrected code snippets for each.""",
+        "debug": f"""You are an expert Python debugger.
+Analyse the following code from '{filename}'.
+Identify all bugs, logic errors, edge cases, and bad practices.
+For each issue: describe the problem, where it occurs, and provide a corrected code snippet.
+````````python
+{code}
+```````""",
 
-        "document": f"""System: You are a Technical Documentation Expert.
-Task: Add professional Google-style docstrings to all functions and classes in '{filename}'.
-Constraint: Return ONLY the complete updated Python code. Do not include introductory chat.""",
+        "document": f"""You are a technical documentation writer.
+Add clear Google-style docstrings to every function and class in '{filename}' that is missing one.
+Return the COMPLETE updated file with all original code preserved.
+``````python
+{code}
+`````""",
 
-        "test": f"""System: You are a Senior QA Automation Engineer.
-Task: Write a comprehensive 'pytest' suite for '{filename}'.
-Requirements:
-1. Test happy paths, boundary conditions, and invalid inputs.
-2. Use the EXACT exception types raised in the original code.
-Return ONLY the runnable pytest code."""
+"test": f"""You are a Python testing expert.
+Write comprehensive pytest unit tests for all functions and classes in '{filename}'.
+Cover happy paths, edge cases, and error/exception cases.
+IMPORTANT: Use the exact exception types raised in the actual code. For example, if calculate() raises ValueError for invalid operations, test for ValueError not KeyError.
+Return only the test file content, ready to run with pytest.
+````python
+{code}
+```""",
+
     }
 
-    try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[
-                {"role": "system", "content": "You are a specialized AI Developer Agent. Your output is technical, accurate, and ready for production use."},
-                {"role": "user", "content": f"{prompts[task]}\n\n### SOURCE CODE:\n{code}"}
-            ],
-            temperature=0.1,
-            max_tokens=3500
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"⚠️ Agent Reasoning Error: {str(e)}"
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompts[task]}],
+        max_tokens=2048,
+    )
+    return response.choices[0].message.content
 
 def print_result(title, content):
-    """Prints a formatted summary of the agent's work to the console."""
     print("\n" + "=" * 60)
     print(f"  {title}")
     print("=" * 60)
     print(content)
     print()
 
-def save_file(path, content, is_code=True):
-    """Saves output to disk, cleaning code blocks if necessary."""
-    data = clean_code_block(content) if is_code else content
+def save_file(path, content):
+    clean = content.replace("```python", "").replace("```", "").strip()
     with open(path, "w", encoding="utf-8") as f:
-        f.write(data)
-    print(f"  💾 [File Saved] {path}")
+        f.write(clean)
+    print(f"  [Saved] {path}")
 
 def save_report(filename, results):
-    """Generates a consolidated Markdown audit report."""
-    report_path = os.path.splitext(filename)[0] + "_audit_report.md"
+    """Save all results into a single clean report.md file."""
+    report_path = os.path.splitext(filename)[0] + "_report.md"
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     with open(report_path, "w", encoding="utf-8") as f:
-        f.write(f"# AI Developer Audit Report: `{filename}`\n\n")
-        f.write(f"- **Generated on:** {now}\n")
-        f.write(f"- **Agent Version:** v2.0 (Llama-3.3-70B)\n\n")
+        f.write(f"# AI Dev Workflow Report\n\n")
+        f.write(f"**File analysed:** `{filename}`  \n")
+        f.write(f"**Generated on:** {now}  \n")
+        f.write(f"**Model:** llama-3.3-70b-versatile (Groq)\n\n")
         f.write("---\n\n")
 
         for title, content in results:
@@ -78,56 +116,74 @@ def save_report(filename, results):
             f.write(content)
             f.write("\n\n---\n\n")
 
-    print(f"  📝 [Full Report Generated] {report_path}")
+    print(f"  [Saved] {report_path}")
     return report_path
 
 def run_pytest(test_file):
-    """Automated execution of the generated pytest file."""
-    print(f"\n🚀 Running Automated Test Suite: {test_file}")
-    print("-" * 60)
-    try:
-        subprocess.run(["pytest", "--version"], capture_output=True, check=True)
-        result = subprocess.run(["pytest", test_file, "-v"], capture_output=False)
-        if result.returncode == 0:
-            print("\n✅ ANALYSIS: All AI-generated tests PASSED.")
-        else:
-            print("\n⚠️ ANALYSIS: Test failures detected.")
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        print("\nℹ️ Notice: 'pytest' not found. Skipping auto-run.")
+    """Auto-run pytest on the generated test file."""
+    print(f"\n  Running pytest on {test_file}...\n")
+    print("=" * 60)
+    result = subprocess.run(
+        ["pytest", test_file, "-v"],
+        capture_output=False
+    )
+    if result.returncode == 0:
+        print("\n  [pytest] All tests passed!")
+    else:
+        print("\n  [pytest] Some tests failed — check output above.")
 
 def main():
-    parser = argparse.ArgumentParser(description="Assignment 2 — AI Dev Workflow Assistant")
-    parser.add_argument("--file", required=True, help="Python file path to analyze")
-    parser.add_argument("--mode", required=True, choices=["explain", "debug", "document", "test", "all"])
+    parser = argparse.ArgumentParser(
+        description="Assignment 2 — AI Dev Workflow Assistant"
+    )
+    parser.add_argument("--file", required=True, help="Python file to analyse")
+    parser.add_argument(
+        "--mode",
+        required=True,
+        choices=["explain", "debug", "document", "test", "all"],
+        help="Task to perform"
+    )
     args = parser.parse_args()
 
     client = get_client()
-    source_code = read_file(args.file)
-    base_name = os.path.splitext(args.file)[0]
+    code = read_file(args.file)
+    base = os.path.splitext(args.file)[0]
 
-    tasks = ["explain", "debug", "document", "test"] if args.mode == "all" else [args.mode]
-    titles = {"explain": "Code Architecture", "debug": "Security Audit", "document": "Documentation", "test": "Unit Tests"}
+    tasks = (
+        ["explain", "debug", "document", "test"]
+        if args.mode == "all"
+        else [args.mode]
+    )
 
-    results_for_report = []
-    generated_test_path = None
+    titles = {
+        "explain":  "Code Understanding",
+        "debug":    "Debugging Report",
+        "document": "Documentation Generated",
+        "test":     "Unit Tests Generated",
+    }
 
-    print(f"🔍 Agent initiated for: {args.file}")
+    results = []
+    test_file = None
 
     for task in tasks:
-        print(f"\n🤖 Processing Task: {task.upper()}...")
-        raw_response = ask_groq(client, task, source_code, args.file)
-        print_result(titles.get(task, task), raw_response)
-        results_for_report.append((titles.get(task, task), raw_response))
+        print(f"\nRunning '{task}' on {args.file}...")
+        result = ask_groq(client, task, code, args.file)
+        print_result(titles[task], result)
+        results.append((titles[task], result))
 
         if task == "test":
-            generated_test_path = f"{base_name}_tests.py"
-            save_file(generated_test_path, raw_response)
-        if task == "document":
-            save_file(f"{base_name}_documented.py", raw_response)
+            test_file = f"{base}_tests.py"
+            save_file(test_file, result)
 
-    save_report(args.file, results_for_report)
-    if generated_test_path and os.path.exists(generated_test_path):
-        run_pytest(generated_test_path)
+        if task == "document":
+            save_file(f"{base}_documented.py", result)
+
+    print("\nGenerating report...")
+    save_report(args.file, results)
+
+    
+    if test_file and os.path.exists(test_file):
+        run_pytest(test_file)
 
 if __name__ == "__main__":
     main()
