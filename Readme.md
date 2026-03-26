@@ -23,11 +23,11 @@ An AI-powered agent that assists developers with everyday coding tasks using the
 
 ## Usage
 
-  python assignment2.py --file sample_code.py --mode explain
-  python assignment2.py --file sample_code.py --mode debug
-  python assignment2.py --file sample_code.py --mode document
-  python assignment2.py --file sample_code.py --mode test
-  python assignment2.py --file sample_code.py --mode all
+  python agenticworkflow.py --file sample_code.py --mode explain
+  python agenticworkflow.py --file sample_code.py --mode debug
+  python agenticworkflow.py --file sample_code.py --mode document
+  python agenticworkflow.py --file sample_code.py --mode test
+  python agenticworkflow.py --file sample_code.py --mode all
 
 ## Output Files
 
@@ -42,6 +42,8 @@ An AI-powered agent that assists developers with everyday coding tasks using the
 - Python 3.x
 - Groq API (llama-3.3-70b-versatile)
 - pytest
+
+
 ```
 
 ---
@@ -49,7 +51,7 @@ An AI-powered agent that assists developers with everyday coding tasks using the
 Your final folder:
 ````
 Assignment-2/
-├── assignment2.py       
+├── agenticworkflow.py       
 ├── sample_code.py
 ├── requirements.txt
 ├── README.md            
@@ -58,5 +60,5 @@ Assignment-2/
 
 Run it:
 `````bash
-python assignment2.py --file sample_code.py --mode all
+python agenticworkflow.py --file sample_code.py --mode all
 `````
