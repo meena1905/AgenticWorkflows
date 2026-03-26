@@ -8,11 +8,11 @@ An AI agent that assists in development workflows:
   - Test generation + auto-run
 
 Usage:
-  python assignment2.py --file <your_file.py> --mode explain
-  python assignment2.py --file <your_file.py> --mode debug
-  python assignment2.py --file <your_file.py> --mode document
-  python assignment2.py --file <your_file.py> --mode test
-  python assignment2.py --file <your_file.py> --mode all
+  python agenticworkflow.py --file <your_file.py> --mode explain
+  python agenticworkflow.py --file <your_file.py> --mode debug
+  python agenticworkflow.py --file <your_file.py> --mode document
+  python agenticworkflow.py --file <your_file.py> --mode test
+  python agenticworkflow.py --file <your_file.py> --mode all
 
 Setup:
   pip install -r requirements.txt
@@ -134,7 +134,7 @@ def run_pytest(test_file):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Assignment 2 — AI Dev Workflow Assistant"
+        description="agenticworkflow — AI Dev Workflow Assistant"
     )
     parser.add_argument("--file", required=True, help="Python file to analyse")
     parser.add_argument(
